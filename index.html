@@ -1,0 +1,614 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Vocab Canopy</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500..800&display=swap">
+<style>
+/* Layout: setup -> one question at a time in a leaf-cut card under a slim progress bar -> results with a copyable report; a separate teacher view tallies pasted reports.
+   The leaf-cut corners are the one bold move; everything else stays quiet. */
+:root{
+  --bg:#E8EEE9; --surface:#F5F8F4; --raised:#FFFFFF; --ink:#12231B; --muted:#47604F; --line:#C5D3C9;
+  --accent:#17583C; --on-accent:#FFFFFF; --sun:#EAB308; --on-sun:#1B1500;
+  --good:#17703F; --good-bg:#DDF2E4; --bad:#B42318; --bad-bg:#FBE4E1;
+  --font-display:'Fraunces',Georgia,'Times New Roman',serif;
+  --font-body:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1913; --surface:#14261D; --raised:#1A3025; --ink:#E7F0EA; --muted:#9FB6A8; --line:#2B4535;
+    --accent:#6CCB97; --on-accent:#0B1A12; --sun:#F2B705; --on-sun:#1B1500;
+    --good:#6FD39A; --good-bg:#16382A; --bad:#FF8A80; --bad-bg:#42211F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1913; --surface:#14261D; --raised:#1A3025; --ink:#E7F0EA; --muted:#9FB6A8; --line:#2B4535;
+  --accent:#6CCB97; --on-accent:#0B1A12; --sun:#F2B705; --on-sun:#1B1500;
+  --good:#6FD39A; --good-bg:#16382A; --bad:#FF8A80; --bad-bg:#42211F;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{font-size:clamp(15px,.4vw + 11px,19px)}
+body{
+  margin:0; background:var(--bg); color:var(--ink); font:400 1rem/1.5 var(--font-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:20px; min-height:100%;
+}
+button,input,textarea{font:inherit;color:inherit}
+.shell{max-width:1500px;margin:0 auto}
+h1,h2,p,ol,ul{margin:0}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* buttons and fields */
+.btn{font:600 1rem var(--font-body);padding:.7em 1.3em;border-radius:12px;border:2px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;min-width:0}
+.btn:hover{background:var(--surface)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.sm{padding:.4em .9em;font-size:.88rem;border-width:1.5px}
+.btn.big{font-size:1.15rem;padding:.85em 1.8em}
+.link{background:none;border:0;padding:0;color:var(--accent);font-weight:600;text-decoration:underline;cursor:pointer}
+.field{display:grid;gap:6px}
+.field>span,legend{font:700 .85rem var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.field input,textarea{padding:.65em .9em;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);width:100%;min-width:0}
+textarea{font:500 .9rem/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;resize:vertical}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+legend{padding:0;margin-bottom:.6rem}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{padding:.5em 1.1em;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;font-weight:600;min-width:3rem}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.hint{font-size:.9rem;color:var(--muted)}
+.err{color:var(--bad);font-weight:600}
+.kicker{font:600 .8rem var(--font-body);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+/* setup */
+.setup{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(24px,5vw,72px);align-items:start;padding-block:clamp(8px,4vh,48px)}
+.setup h1{font:800 clamp(3rem,8vw,6.2rem)/.95 var(--font-display);letter-spacing:-.02em;margin:.25em 0 .35em;text-wrap:balance}
+.lede{font-size:1.15rem;max-width:34em;color:var(--muted);text-wrap:pretty}
+.how{list-style:none;padding:0;margin-top:1.6rem;display:grid;gap:.8rem;counter-reset:s;max-width:36em}
+.how li{counter-increment:s;display:grid;grid-template-columns:2rem minmax(0,1fr);gap:.8rem;align-items:start}
+.how li::before{content:counter(s);display:grid;place-items:center;width:2rem;height:2rem;border-radius:12px 3px 12px 3px;background:var(--ink);color:var(--bg);font:700 .95rem var(--font-display)}
+.panel{background:var(--raised);border:1px solid var(--line);border-radius:28px 6px 28px 6px;padding:clamp(18px,3vw,32px);display:grid;gap:1.4rem;min-width:0}
+
+/* quiz */
+.quiz{max-width:1000px;margin:0 auto;display:grid;gap:16px}
+.qbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;justify-content:space-between}
+.brand{font:800 1.5rem var(--font-display);letter-spacing:-.01em}
+.stat{display:flex;align-items:baseline;gap:12px;min-width:0;flex-wrap:wrap}
+.who{font-weight:600;overflow-wrap:anywhere}
+.pts{font:800 1.6rem var(--font-display);font-variant-numeric:tabular-nums}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.prog{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+.meter{height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.qcard{width:100%;background:var(--raised);border:1px solid var(--line);border-radius:30px 6px 30px 6px;padding:clamp(18px,3vw,36px);display:grid;gap:1.1rem;outline:none}
+.qhead{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.pill{font-size:.85rem;font-weight:600;padding:.15em .7em;border-radius:99px;border:1.5px solid var(--line);color:var(--muted)}
+.sec{margin-left:auto;font:700 1.5rem var(--font-display);font-variant-numeric:tabular-nums}
+.timer{height:9px;background:var(--line);border-radius:99px;overflow:hidden}
+.timer i{display:block;height:100%;background:var(--accent);transform-origin:left;transform:scaleX(1)}
+.timer.low i{background:var(--bad)}
+.qlabel{font:600 .85rem var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.qtext{font:600 clamp(1.45rem,2.7vw,2.3rem)/1.3 var(--font-display);text-wrap:pretty;margin-top:.2em}
+.blank{display:inline-block;min-width:4.5em;border-bottom:4px solid var(--ink);margin:0 .15em}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.opt{display:flex;align-items:center;gap:14px;text-align:left;min-height:4.4rem;padding:.7em 1em;border-radius:16px 4px 16px 4px;border:2px solid var(--line);background:var(--surface);cursor:pointer;font:600 clamp(1.1rem,1.9vw,1.5rem) var(--font-body);min-width:0;overflow-wrap:anywhere}
+.opt:hover:not(:disabled){border-color:var(--accent);transform:translateY(-2px)}
+.opt:disabled{cursor:default}
+.key{flex:none;display:grid;place-items:center;width:2.2rem;height:2.2rem;border-radius:9px;background:var(--ink);color:var(--bg);font:700 .95rem var(--font-body)}
+.opt.ok{border-color:var(--good);background:var(--good-bg)}
+.opt.ok::after{content:"Đúng";margin-left:auto;font-size:.85rem;color:var(--good)}
+.opt.no{border-color:var(--bad);background:var(--bad-bg)}
+.opt.no::after{content:"Sai";margin-left:auto;font-size:.85rem;color:var(--bad)}
+.opt.dim{opacity:.5}
+.reveal{border-radius:18px 4px 18px 4px;padding:clamp(14px,2vw,22px);display:grid;gap:.6rem}
+.reveal.good{background:var(--good-bg);border:2px solid var(--good)}
+.reveal.bad{background:var(--bad-bg);border:2px solid var(--bad)}
+.verdict{font-weight:700;font-size:1.1rem}
+.answer{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+.aw{font:800 clamp(2rem,4vw,3rem)/1 var(--font-display)}
+.pos{font-style:italic;color:var(--muted)}
+.vi{font-weight:600;font-size:1.2rem}
+mark{background:var(--sun);color:var(--on-sun);padding:0 .25em;border-radius:4px}
+.actions{display:flex;justify-content:flex-end}
+
+/* results and teacher */
+.page{max-width:960px;margin:clamp(8px,3vh,36px) auto;display:grid;gap:1.8rem}
+.page h1{font:800 clamp(2.2rem,5.5vw,4rem)/1 var(--font-display);letter-spacing:-.02em;text-wrap:balance}
+.page h2{font:700 1.5rem var(--font-display)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:12px}
+.kpi{background:var(--raised);border:1px solid var(--line);border-radius:18px 4px 18px 4px;padding:14px 16px;display:grid;gap:2px}
+.kpi b{font:800 2rem/1.1 var(--font-display);font-variant-numeric:tabular-nums}
+.kpi small{color:var(--muted)}
+.send{display:grid;gap:10px}
+.btns{display:flex;flex-wrap:wrap;gap:12px}
+.review{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:10px}
+.review li{background:var(--raised);border:1px solid var(--line);border-radius:16px 4px 16px 4px;padding:12px 14px;display:grid;gap:2px;min-width:0}
+.review b{font:700 1.2rem var(--font-display);overflow-wrap:anywhere}
+.review span{color:var(--muted);font-size:.92rem}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:16px 4px 16px 4px;background:var(--raised)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.95rem}
+th,td{padding:.6em .8em;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:700 .78rem var(--font-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.words{min-width:12rem;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+.hard{list-style:none;padding:0;display:grid;gap:10px}
+.hard li{display:grid;grid-template-columns:minmax(0,12rem) minmax(0,1fr) auto;gap:12px;align-items:center}
+.hard b{overflow-wrap:anywhere}
+.hard .bar2{height:12px;border-radius:6px 2px 6px 2px;background:var(--bad);min-width:6px}
+details summary{cursor:pointer;font-weight:600}
+
+@media (max-width:860px){
+  .setup{grid-template-columns:minmax(0,1fr)}
+  .opts{grid-template-columns:minmax(0,1fr)}
+  .hard li{grid-template-columns:minmax(0,1fr) auto}
+  .hard .bar2{grid-column:1 / -1;grid-row:2}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+
+<div id="app"></div>
+
+<script>
+/* p: adj / noun / verb / adv / phrase.  d: definition.  s: sentence with ___ for the answer.  vi: Vietnamese meaning.  ex: words that must not appear as wrong options (near-synonyms).
+   The order of this list is part of the result code students send back: append new words at the end, never reorder. */
+const WORDS=[
+{w:'ancient',p:'adj',d:'very old; from a time long ago',s:'Archaeologists studied the ___ ruins, which were built more than 3,000 years ago.',vi:'cổ xưa, cổ đại',ex:[]},
+{w:'spectacular',p:'adj',d:'very impressive and exciting to look at',s:'The view from the top of the waterfall was absolutely ___.',vi:'ngoạn mục, đẹp mắt',ex:[]},
+{w:'massive',p:'adj',d:'extremely large, heavy and solid',s:'The ship was so ___ that it took two hours to sail past us.',vi:'đồ sộ, khổng lồ',ex:[]},
+{w:'trunk',p:'noun',d:'the thick main stem of a tree',s:'Ten people holding hands could barely reach around the ___ of the giant baobab.',vi:'thân cây',ex:[]},
+{w:'distinctive',p:'adj',d:'having a special quality that makes something easy to recognise',s:'The red-and-white feathers are very ___, so you can always tell this bird from others.',vi:'đặc trưng, dễ nhận ra',ex:[]},
+{w:'branch',p:'noun',d:'a part of a tree that grows out from the trunk',s:'A small bird landed on the thin ___ and it bent under the weight.',vi:'cành cây',ex:[]},
+{w:'species',p:'noun',d:'a group of plants or animals of the same kind that can breed together',s:'Scientists discover thousands of new ___ of insects every year.',vi:'loài (sinh vật)',ex:[]},
+{w:'religious',p:'adj',d:'connected with belief in a god or gods',s:'Christmas, Ramadan and Vesak are important ___ festivals around the world.',vi:'thuộc tôn giáo',ex:['spiritual']},
+{w:'spiritual',p:'adj',d:'connected with the human soul and deep feelings, not with the body or material things',s:'She does not care about money; she looks for ___ peace through meditation.',vi:'thuộc về tinh thần, tâm linh',ex:['religious']},
+{w:'significance',p:'noun',d:'the importance or special meaning of something',s:'The old stone has great cultural ___ for the local people.',vi:'tầm quan trọng, ý nghĩa',ex:[]},
+{w:'tribe',p:'noun',d:'a group of people with the same language and customs who live together, often under a chief',s:'The chief of the ___ led his people to a new village by the river.',vi:'bộ lạc',ex:[]},
+{w:'majority',p:'noun',d:'most of the people or things in a group',s:'The vast ___ of the students voted yes; only three said no.',vi:'đa số',ex:['population']},
+{w:'population',p:'noun',d:'the total number of people who live in a place',s:'The ___ of the city has doubled in twenty years; two million people now live there.',vi:'dân số',ex:['majority']},
+{w:'populous',p:'adj',d:'having a large number of people living there',s:'India is one of the most ___ countries in the world, with over a billion people.',vi:'đông dân',ex:[]},
+{w:'ideal',p:'adj',d:'perfect, or the best possible for a particular purpose',s:'Warm weather and calm seas make this beach ___ for swimming.',vi:'lý tưởng',ex:['valuable']},
+{w:'endangered',p:'adj',d:'at risk of disappearing completely from the Earth',s:'Pandas are ___ because only a small number are left in the wild.',vi:'có nguy cơ tuyệt chủng',ex:['extinct']},
+{w:'contradiction',p:'noun',d:'a situation in which two facts or ideas cannot both be true',s:'He says he loves nature but throws rubbish everywhere. That is a ___.',vi:'sự mâu thuẫn',ex:[]},
+{w:'scene',p:'noun',d:'a view of a place, or what you can see in one place',s:'From the hilltop we had a beautiful ___ of the valley and the river.',vi:'cảnh, quang cảnh',ex:[]},
+{w:'man-made',p:'adj',d:'made by people, not found in nature',s:'The lake is not natural; it is a ___ lake built by workers in 1960.',vi:'nhân tạo',ex:[]},
+{w:'plain',p:'noun',d:'a large area of flat land',s:'Rice grows well on the wide, flat ___ near the river delta.',vi:'đồng bằng',ex:[]},
+{w:'sugar-cane',p:'noun',d:'a tall tropical plant whose stems are used to make sugar',s:'The farmers cut the tall ___ and took it to the mill to make sugar.',vi:'cây mía',ex:[]},
+{w:'valuable',p:'adj',d:'worth a lot of money, or very useful',s:'Gold is ___ because it is rare and everyone wants it.',vi:'có giá trị, quý giá',ex:['ideal']},
+{w:'renewable',p:'adj',d:'able to be replaced naturally or used again and again',s:'Wind and solar are ___ sources of energy.',vi:'có thể tái tạo',ex:[]},
+{w:'survive',p:'verb',d:'to continue to live or exist, especially in a difficult situation',s:'Very few plants can ___ in such a dry desert.',vi:'sống sót, tồn tại',ex:[]},
+{w:'reminder',p:'noun',d:'something that helps you remember',s:'I put a sticky note on the fridge as a ___ to buy milk.',vi:'vật/lời nhắc nhở',ex:[]},
+{w:'exact',p:'adj',d:'completely correct in every detail',s:'Please tell me the ___ time of the meeting: 9:15, not "about nine".',vi:'chính xác',ex:[]},
+{w:'cause',p:'verb',d:'to make something happen',s:'Too little rain can ___ crops to fail.',vi:'gây ra',ex:[]},
+{w:'uncertain',p:'adj',d:'not sure, or not clear about what will happen',s:'Nobody knows if it will rain tomorrow, so our picnic plans are ___.',vi:'không chắc chắn',ex:['concerned']},
+{w:'irrigate',p:'verb',d:'to supply land with water so that crops can grow',s:'Farmers ___ their fields with water from the river in the dry season.',vi:'tưới tiêu',ex:[]},
+{w:'partly',p:'adv',d:'not completely; to some degree',s:'The road is ___ blocked, but small cars can still get through.',vi:'một phần, phần nào',ex:[]},
+{w:'blame',p:'verb',d:'to say that someone is responsible for something bad',s:"Don't ___ me for the mess; I wasn't even here!",vi:'đổ lỗi, trách',ex:[]},
+{w:'adapted to',p:'phrase',d:'changed in order to suit a new place or situation',s:'Camels are well ___ the hot, dry desert.',vi:'thích nghi với',ex:[]},
+{w:'annual',p:'adj',d:'happening once every year',s:'Our school holds its ___ sports day every October.',vi:'hằng năm',ex:[]},
+{w:'cope with',p:'phrase',d:'to deal successfully with a difficult situation',s:'Many students find it hard to ___ the pressure of final exams.',vi:'đối phó với, xoay xở với',ex:[]},
+{w:'constant',p:'adj',d:'continuous; not stopping or changing',s:'The ___ noise of traffic outside kept me awake all night.',vi:'liên tục, không ngừng',ex:[]},
+{w:'lone',p:'adj',d:'without any others; single and alone',s:'A ___ tree stood in the empty field, with no other tree anywhere near.',vi:'đơn độc, lẻ loi',ex:['separate']},
+{w:'separate',p:'adj',d:'apart from others; not joined together',s:'The twins sleep in ___ rooms because each wants some private space.',vi:'riêng biệt, tách rời',ex:['lone']},
+{w:'susceptible to',p:'phrase',d:'easily harmed or affected by something',s:'Young children are ___ colds, so they often get sick in winter.',vi:'dễ bị (ảnh hưởng, mắc bệnh)',ex:[]},
+{w:'survival',p:'noun',d:'the state of continuing to live or exist',s:'In the desert, water is essential for human ___.',vi:'sự sống sót',ex:['conservation']},
+{w:'land clearance',p:'noun',d:'the removal of trees and plants from land, for example to make space for farms or buildings',s:'Large-scale ___ for farms and roads has destroyed much of the rainforest.',vi:'việc phát quang đất',ex:[]},
+{w:'suppress',p:'verb',d:'to stop something from growing, developing or happening',s:'Thick shade from tall trees can ___ the growth of small plants beneath them.',vi:'kìm hãm, ngăn chặn',ex:[]},
+{w:'regeneration',p:'noun',d:'the process of growing again or being renewed',s:'New trees are growing from the ashes, which shows the natural ___ of the forest.',vi:'sự tái sinh',ex:['germination']},
+{w:'resistance to',p:'phrase',d:'the ability not to be harmed by something',s:'Some bacteria have developed ___ antibiotics, so the medicine no longer works.',vi:'khả năng kháng, chống chịu',ex:[]},
+{w:'eventually',p:'adv',d:'after a long time, or at the end of a series of events',s:'We waited for hours, and ___ the bus arrived.',vi:'cuối cùng thì',ex:[]},
+{w:'disturbance',p:'noun',d:'something that interrupts or upsets a calm or normal situation',s:'The noise from the building site was a big ___ to the sleeping birds.',vi:'sự xáo trộn, sự quấy rầy',ex:[]},
+{w:'promote',p:'verb',d:'to help something develop or become more popular',s:'The government wants to ___ tourism by building new hotels and roads.',vi:'thúc đẩy, quảng bá',ex:[]},
+{w:'rapid',p:'adj',d:'happening or moving very fast',s:"The town's ___ growth surprised everyone: it doubled in just two years.",vi:'nhanh chóng',ex:['swift']},
+{w:'spread',p:'verb',d:'to cover or reach a wider area',s:'The fire began to ___ quickly across the dry grassland.',vi:'lan rộng, lan truyền',ex:[]},
+{w:'germination',p:'noun',d:'the moment when a seed starts to grow and sprout',s:'Warmth and moisture are needed for the ___ of seeds, when they start to sprout.',vi:'sự nảy mầm',ex:['regeneration','dispersal']},
+{w:'dispersal',p:'noun',d:'the spreading of things over a wide area',s:'Birds help the ___ of seeds by carrying them far from the parent tree.',vi:'sự phát tán',ex:['distribution','germination']},
+{w:'absence',p:'noun',d:'a time when someone or something is not present',s:'Her ___ from school was caused by illness.',vi:'sự vắng mặt',ex:[]},
+{w:'extinct',p:'adj',d:'no longer existing; having died out completely',s:'Dinosaurs have been ___ for millions of years; none are alive today.',vi:'tuyệt chủng',ex:['endangered']},
+{w:'concerned',p:'adj',d:'worried about something important',s:'Parents are ___ about the high level of pollution near the school.',vi:'lo lắng, quan tâm',ex:['uncertain']},
+{w:'intact',p:'adj',d:'complete and not damaged',s:'Despite the earthquake, the old bridge remained ___, with no damage at all.',vi:'còn nguyên vẹn',ex:[]},
+{w:'habitat',p:'noun',d:'the natural home of a plant or animal',s:'Many forest animals lose their natural ___ when the trees are cut down.',vi:'môi trường sống',ex:[]},
+{w:'distribution',p:'noun',d:'the way something is spread over an area',s:'The map shows the ___ of rainfall across the country: the north is wet and the south is dry.',vi:'sự phân bố',ex:['dispersal']},
+{w:'swift',p:'adj',d:'moving or happening quickly',s:'The deer was so ___ that the hunters could never catch it.',vi:'nhanh, mau lẹ',ex:['rapid']},
+{w:'conservation',p:'noun',d:'the protection of nature and natural resources',s:'National parks were created for the ___ of nature, to protect it for the future.',vi:'sự bảo tồn',ex:['survival']}
+];
+
+const POS={adj:'tính từ',noun:'danh từ',verb:'động từ',adv:'trạng từ',phrase:'cụm từ'};
+const LETTERS=['A','B','C','D'];
+const POINTS=10;
+
+const S={
+  screen:location.hash==='#teacher'?'teacher':'setup',
+  name:'',cls:'',count:WORDS.length,timer:20,sound:true,err:'',
+  order:[],i:0,q:null,score:0,correct:0,asked:0,missed:new Set(),startedAt:0,offset:0,
+  result:null,endArm:false,
+  paste:'',agg:null
+};
+
+const app=document.getElementById('app');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const fmtTime=sec=>{sec=Math.round(sec);const m=Math.floor(sec/60),s=sec%60;return m?`${m} phút ${s} giây`:`${s} giây`;};
+
+/* sound */
+let AC=null;
+function beep(seq){
+  if(!S.sound)return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    let t=AC.currentTime;
+    seq.forEach(([f,d,type])=>{
+      const o=AC.createOscillator(),g=AC.createGain();
+      o.type=type||'sine';o.frequency.value=f;
+      g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+      o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+.02);t+=d*.85;
+    });
+  }catch(e){}
+}
+const SND={good:[[523,.12],[659,.12],[784,.22]],bad:[[220,.25,'sawtooth'],[165,.3,'sawtooth']],win:[[523,.15],[659,.15],[784,.15],[1047,.4]]};
+
+/* result code: what a student sends back, and what the teacher page reads */
+function encodeResult(r){
+  const p={v:2,n:r.n,c:r.c,s:r.s,t:r.t,k:r.k,a:r.a,sec:r.sec,m:r.m,d:r.d};
+  const bytes=new TextEncoder().encode(JSON.stringify(p));
+  let bin='';bytes.forEach(b=>{bin+=String.fromCharCode(b);});
+  return 'VC2.'+btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function decodeResult(code){
+  try{
+    let s=code.replace(/-/g,'+').replace(/_/g,'/');
+    while(s.length%4)s+='=';
+    const bin=atob(s);
+    const o=JSON.parse(new TextDecoder().decode(Uint8Array.from(bin,c=>c.charCodeAt(0))));
+    const num=x=>typeof x==='number'&&isFinite(x);
+    if(!o||o.v!==2||typeof o.n!=='string'||![o.s,o.t,o.k,o.a,o.sec].every(num)||!Array.isArray(o.m))return null;
+    return {n:o.n.slice(0,60),c:String(o.c||'').slice(0,30),s:o.s,t:o.t,k:o.k,a:o.a,sec:o.sec,
+      m:[...new Set(o.m.filter(i=>Number.isInteger(i)&&i>=0&&i<WORDS.length))],d:num(o.d)?o.d:0};
+  }catch(e){return null;}
+}
+function reportText(r){
+  const ws=a=>a.length?a.map(i=>WORDS[i].w).join(', '):'không có';
+  const lines=[
+    `VOCAB CANOPY | ${r.n}${r.c?' | Lớp '+r.c:''}`,
+    `Điểm: ${r.s}`,
+    `Số câu đúng: ${r.k}/${r.t}`
+  ];
+  if(r.a<r.t)lines.push(`Đã trả lời: ${r.a}/${r.t} câu`);
+  lines.push(`Thời gian: ${fmtTime(r.sec)}`,`Từ làm sai: ${ws(r.m)}`);
+  if(r.u.length)lines.push(`Từ chưa làm: ${ws(r.u)}`);
+  lines.push(`Mã nộp bài: ${encodeResult(r)}`);
+  return lines.join('\n');
+}
+
+/* game */
+function conflict(a,b){return a.ex.includes(b.w)||b.ex.includes(a.w);}
+function buildQ(wi){
+  const w=WORDS[wi];
+  const type=((S.i+S.offset)%2===0)?'def':'gap';
+  const ok=x=>x!==w&&!conflict(x,w);
+  let pool=WORDS.filter(x=>ok(x)&&x.p===w.p);
+  if(pool.length<3){
+    const extra=WORDS.filter(x=>ok(x)&&x.p!==w.p&&(x.p==='adj'||x.p==='noun')&&!pool.includes(x));
+    pool=pool.concat(shuffle(extra).slice(0,3-pool.length));
+  }
+  const wrong=shuffle(pool).slice(0,3).map(x=>WORDS.indexOf(x));
+  return {wi,type,opts:shuffle([wi,...wrong]),done:false,locked:false,ok:false,picked:null,timeout:false};
+}
+function startGame(){
+  const name=S.name.trim().replace(/\s+/g,' ');
+  if(!name){
+    S.err='Hãy nhập họ tên để bắt đầu.';render();
+    const i=document.getElementById('pname');if(i)i.focus();
+    return;
+  }
+  S.err='';S.name=name;
+  S.order=shuffle([...WORDS.keys()]).slice(0,S.count);
+  S.i=0;S.score=0;S.correct=0;S.asked=0;S.missed=new Set();S.result=null;S.endArm=false;
+  S.offset=Math.random()<.5?0:1;S.startedAt=Date.now();
+  S.q=buildQ(S.order[0]);S.screen='quiz';
+  render();window.scrollTo(0,0);startTimer();
+}
+let raf=null;
+function stopTimer(){if(raf){cancelAnimationFrame(raf);raf=null;}}
+function startTimer(){
+  stopTimer();
+  const sec=S.timer;
+  const bar=document.getElementById('tbar'),num=document.getElementById('tnum'),box=document.getElementById('tbox');
+  if(!sec||!bar)return;
+  const end=performance.now()+sec*1000;
+  const tick=()=>{
+    const left=end-performance.now();
+    bar.style.transform=`scaleX(${Math.max(0,left/(sec*1000))})`;
+    num.textContent=Math.max(0,Math.ceil(left/1000));
+    box.classList.toggle('low',left<=5000);
+    if(left<=0){raf=null;choose(-1);return;}
+    raf=requestAnimationFrame(tick);
+  };
+  tick();
+}
+function choose(k){
+  const q=S.q;
+  if(!q||q.done||q.locked)return;
+  q.locked=true;stopTimer();
+  const picked=k>=0?q.opts[k]:null;
+  const ok=picked===q.wi;
+  S.asked++;
+  if(ok){
+    S.score+=POINTS;S.correct++;
+    Object.assign(q,{ok:true,picked,done:true,timeout:false});
+    beep(SND.good);
+  }else{
+    S.missed.add(q.wi);
+    Object.assign(q,{ok:false,picked,done:true,timeout:k<0});
+    beep(SND.bad);
+  }
+  updateQ();
+}
+function nextStep(){
+  stopTimer();
+  S.i++;
+  if(S.i>=S.order.length){finish();return;}
+  S.q=buildQ(S.order[S.i]);
+  render();window.scrollTo(0,0);startTimer();
+}
+function finish(){
+  stopTimer();
+  S.result={
+    n:S.name,c:S.cls.trim(),s:S.score,t:S.order.length,k:S.correct,a:S.asked,
+    sec:Math.max(1,Math.round((Date.now()-S.startedAt)/1000)),
+    m:[...S.missed].sort((a,b)=>a-b),
+    u:S.order.slice(S.asked),
+    d:Date.now()
+  };
+  S.q=null;S.screen='results';S.endArm=false;
+  render();window.scrollTo(0,0);
+  if(S.correct>0)beep(SND.win);
+}
+
+/* teacher: tally pasted reports */
+function aggregate(){
+  const re=/VC2\.([A-Za-z0-9_-]+)/g;
+  const seen=new Set(),by=new Map();
+  let ok=0,bad=0,m;
+  while((m=re.exec(S.paste))){
+    if(seen.has(m[1]))continue;
+    seen.add(m[1]);
+    const r=decodeResult(m[1]);
+    if(!r){bad++;continue;}
+    ok++;
+    const key=(r.n+'|'+r.c).toLowerCase().replace(/\s+/g,' ');
+    const cur=by.get(key);
+    if(!cur)by.set(key,{...r,runs:1});
+    else{
+      const runs=cur.runs+1;
+      if(r.s>cur.s||(r.s===cur.s&&r.d>cur.d))by.set(key,{...r,runs});else cur.runs=runs;
+    }
+  }
+  const rows=[...by.values()].sort((a,b)=>b.s-a.s||a.sec-b.sec);
+  const counts=new Array(WORDS.length).fill(0);
+  rows.forEach(r=>r.m.forEach(i=>{counts[i]++;}));
+  const hard=counts.map((c,i)=>({i,c})).filter(x=>x.c>0).sort((a,b)=>b.c-a.c||a.i-b.i).slice(0,15);
+  const n=rows.length;
+  const sum=f=>rows.reduce((x,r)=>x+f(r),0);
+  S.agg={rows,ok,bad,hard,n,
+    avg:n?Math.round(sum(r=>r.s)/n):0,
+    acc:sum(r=>r.a)?Math.round(100*sum(r=>r.k)/sum(r=>r.a)):0,
+    time:n?Math.round(sum(r=>r.sec)/n):0};
+}
+function tsv(){
+  const clean=s=>String(s).replace(/[\t\r\n]+/g,' ');
+  const head=['Họ tên','Lớp','Điểm','Số câu đúng','Tổng số câu','Đã trả lời','Thời gian (giây)','Số lần nộp','Từ làm sai'].join('\t');
+  const rows=S.agg.rows.map(r=>[r.n,r.c,r.s,r.k,r.t,r.a,r.sec,r.runs,r.m.map(i=>WORDS[i].w).join(', ')].map(clean).join('\t'));
+  return [head,...rows].join('\n');
+}
+
+/* copy with a visible fallback */
+async function copyFrom(id,btn,detailsId){
+  const ta=document.getElementById(id);
+  if(!ta)return;
+  const orig=btn.textContent;
+  try{
+    await navigator.clipboard.writeText(ta.value);
+    btn.textContent='Đã sao chép';
+  }catch(e){
+    if(detailsId){const d=document.getElementById(detailsId);if(d)d.open=true;}
+    ta.focus();ta.select();
+    btn.textContent='Nhấn Ctrl+C (hoặc giữ để chọn Sao chép)';
+  }
+  setTimeout(()=>{btn.textContent=orig;},2500);
+}
+
+/* question card */
+function qHTML(){
+  const q=S.q,w=WORDS[q.wi];
+  const last=S.i===S.order.length-1;
+  const prompt=q.type==='def'
+    ?`<div><p class="qlabel">Từ nào có nghĩa là…</p><p class="qtext">${esc(cap(w.d))}.</p></div>`
+    :`<div><p class="qlabel">Chọn từ điền vào chỗ trống</p><p class="qtext">${esc(w.s).replace('___','<span class="blank"></span>')}</p></div>`;
+  const head=`<div class="qhead">
+    <span class="pill">Câu ${S.i+1}/${S.order.length}</span>
+    <span class="pill">${POINTS} điểm</span>
+    ${(!q.done&&S.timer)?`<span class="sec" id="tnum">${S.timer}</span>`:''}
+  </div>`;
+  const timer=(!q.done&&S.timer)?`<div class="timer" id="tbox"><i id="tbar"></i></div>`:'';
+  const opts=q.opts.map((wi,k)=>{
+    let cls='';
+    if(q.done)cls=wi===q.wi?'ok':(wi===q.picked?'no':'dim');
+    return `<button class="opt ${cls}" data-act="opt" data-k="${k}" ${q.done?'disabled':''}><span class="key">${LETTERS[k]}</span><span>${esc(WORDS[wi].w)}</span></button>`;
+  }).join('');
+  let reveal='';
+  if(q.done){
+    const verdict=q.ok?`Chính xác! Bạn nhận ${POINTS} điểm.`:(q.timeout?'Hết giờ! Không được điểm câu này.':'Chưa đúng. Không được điểm câu này.');
+    reveal=`<div class="reveal ${q.ok?'good':'bad'}" aria-live="polite">
+      <p class="verdict">${verdict}</p>
+      <div class="answer"><span class="aw">${esc(w.w)}</span><span class="pos">${POS[w.p]}</span><span class="vi">${esc(w.vi)}</span></div>
+      <p>${esc(cap(w.d))}.</p>
+      <p>${esc(w.s).replace('___',`<mark>${esc(w.w)}</mark>`)}</p>
+    </div>
+    <div class="actions"><button class="btn primary big" data-act="next" id="nextBtn">${last?'Xem kết quả':'Câu tiếp theo'}</button></div>`;
+  }
+  return head+timer+prompt+`<div class="opts">${opts}</div>`+reveal;
+}
+function updateQ(){
+  const card=document.getElementById('qcard');
+  if(!card)return;
+  card.innerHTML=qHTML();
+  const sc=document.getElementById('score');if(sc)sc.textContent=S.score;
+  const pf=document.getElementById('pfill');if(pf)pf.style.width=Math.round(100*S.asked/S.order.length)+'%';
+  const pc=document.getElementById('pcount');if(pc)pc.textContent=S.asked+'/'+S.order.length;
+  if(S.q.done){const b=document.getElementById('nextBtn');if(b)b.focus();}
+}
+
+/* screens */
+function setupHTML(){
+  const segC=[[20,'20 câu'],[40,'40 câu'],[WORDS.length,`Cả ${WORDS.length} câu`]].map(([v,l])=>`<button type="button" data-act="count" data-v="${v}" aria-pressed="${S.count===v}">${l}</button>`).join('');
+  const segT=[15,20,30].map(v=>`<button type="button" data-act="timer" data-v="${v}" aria-pressed="${S.timer===v}">${v} giây</button>`).join('');
+  return `<div class="shell"><section class="setup">
+    <div>
+      <p class="kicker">Bài tập từ vựng cá nhân</p>
+      <h1>Vocab Canopy</h1>
+      <p class="lede">${WORDS.length} từ về rừng, cây cối và thiên nhiên. Bạn tự trả lời lần lượt từng câu, mỗi câu đúng được ${POINTS} điểm, rồi gửi kết quả cho giáo viên.</p>
+      <ol class="how">
+        <li>Nhập họ tên rồi bấm bắt đầu.</li>
+        <li>Mỗi câu có 4 đáp án và một đồng hồ đếm ngược. Chọn đáp án đúng trước khi hết giờ.</li>
+        <li>Sau mỗi câu, bạn xem đáp án, nghĩa tiếng Việt và câu ví dụ.</li>
+        <li>Làm xong, sao chép khung kết quả và gửi vào nhóm lớp.</li>
+      </ol>
+    </div>
+    <div class="panel">
+      <label class="field"><span>Họ và tên</span><input id="pname" data-f="name" maxlength="40" autocomplete="name" value="${esc(S.name)}" placeholder="Ví dụ: Nguyễn Minh Anh"></label>
+      <label class="field"><span>Lớp (không bắt buộc)</span><input id="pcls" data-f="cls" maxlength="20" value="${esc(S.cls)}" placeholder="Ví dụ: 8A2"></label>
+      <fieldset><legend>Số câu</legend><div class="seg">${segC}</div></fieldset>
+      <fieldset><legend>Thời gian mỗi câu</legend><div class="seg">${segT}</div></fieldset>
+      ${S.err?`<p class="err" role="alert">${esc(S.err)}</p>`:''}
+      <button class="btn primary big" data-act="start">Bắt đầu chơi</button>
+      <p class="hint">Giáo viên? <button class="link" data-act="teacher">Mở trang tổng hợp kết quả</button></p>
+    </div>
+  </section></div>`;
+}
+function quizHTML(){
+  const t=S.order.length;
+  return `<div class="shell"><div class="quiz">
+    <header class="qbar">
+      <div class="brand">Vocab Canopy</div>
+      <div class="stat"><span class="who">${esc(S.name)}</span><span><span class="pts" id="score">${S.score}</span> <small>điểm</small></span></div>
+      <div class="tools">
+        <button class="btn sm" data-act="mute" aria-pressed="${S.sound}">Âm thanh: ${S.sound?'bật':'tắt'}</button>
+        <button class="btn sm" data-act="end">Nộp bài</button>
+      </div>
+    </header>
+    <div class="prog"><span>Đã làm <span id="pcount">${S.asked}/${t}</span></span><div class="meter" role="progressbar" aria-valuemin="0" aria-valuemax="${t}" aria-valuenow="${S.asked}"><i id="pfill" style="width:${Math.round(100*S.asked/t)}%"></i></div></div>
+    <div class="qcard" id="qcard" role="group" aria-label="Câu hỏi">${qHTML()}</div>
+  </div></div>`;
+}
+function resultsHTML(){
+  const r=S.result;
+  const review=[...new Set([...r.m,...r.u])].sort((a,b)=>a-b);
+  const items=review.map(i=>`<li><b>${esc(WORDS[i].w)}</b><span>${POS[WORDS[i].p]} · ${esc(WORDS[i].vi)}</span><span>${esc(cap(WORDS[i].d))}.</span></li>`).join('');
+  const acc=r.a?Math.round(100*r.k/r.a):0;
+  return `<div class="shell"><section class="page">
+    <div><p class="kicker">Kết quả của ${esc(r.n)}${r.c?' · Lớp '+esc(r.c):''}</p>
+      <h1>${r.k===r.t?`Tuyệt vời! Bạn đúng cả ${r.t} câu`:`Bạn đúng ${r.k} trên ${r.t} câu`}</h1></div>
+    <div class="kpis">
+      <div class="kpi"><b>${r.s}</b><small>điểm</small></div>
+      <div class="kpi"><b>${r.k}/${r.t}</b><small>câu đúng</small></div>
+      <div class="kpi"><b>${acc}%</b><small>tỉ lệ đúng${r.a<r.t?` (trên ${r.a} câu đã làm)`:''}</small></div>
+      <div class="kpi"><b>${esc(fmtTime(r.sec))}</b><small>thời gian làm bài</small></div>
+    </div>
+    <div class="send">
+      <h2>Gửi kết quả cho giáo viên</h2>
+      <p class="hint">Bấm Sao chép, rồi dán vào nhóm chat của lớp hoặc nhắn riêng cho giáo viên. Gửi nguyên cả khung, kể cả dòng Mã nộp bài.</p>
+      <textarea id="rep" readonly rows="${r.u.length?9:8}" aria-label="Khung kết quả">${esc(reportText(r))}</textarea>
+      <div class="btns"><button class="btn primary" data-act="copyrep">Sao chép kết quả</button></div>
+    </div>
+    ${items?`<div class="send"><h2>Từ nên ôn lại (${review.length})</h2><ul class="review">${items}</ul></div>`:''}
+    <div class="btns"><button class="btn big" data-act="again">Làm lại</button><button class="btn big" data-act="setup">Về trang đầu</button></div>
+  </section></div>`;
+}
+function teacherHTML(){
+  const a=S.agg;
+  let out='';
+  if(a){
+    const rows=a.rows.map((r,k)=>`<tr><td class="num">${k+1}</td><td>${esc(r.n)}</td><td>${esc(r.c)}</td><td class="num"><b>${r.s}</b></td><td class="num">${r.k}/${r.t}</td><td class="num">${esc(fmtTime(r.sec))}</td><td class="num">${r.runs}</td><td class="words">${r.m.length?esc(r.m.map(i=>WORDS[i].w).join(', ')):'—'}</td></tr>`).join('');
+    const hard=a.hard.map(h=>`<li><b>${esc(WORDS[h.i].w)} <small>${esc(WORDS[h.i].vi)}</small></b><span class="bar2" style="width:${Math.max(3,Math.round(100*h.c/a.n))}%"></span><span>${h.c}/${a.n} học sinh</span></li>`).join('');
+    out=`<div class="kpis">
+        <div class="kpi"><b>${a.n}</b><small>học sinh</small></div>
+        <div class="kpi"><b>${a.avg}</b><small>điểm trung bình</small></div>
+        <div class="kpi"><b>${a.acc}%</b><small>tỉ lệ câu đúng</small></div>
+        <div class="kpi"><b>${esc(fmtTime(a.time))}</b><small>thời gian trung bình</small></div>
+      </div>
+      ${a.bad?`<p class="err">Có ${a.bad} mã không đọc được. Hãy nhờ học sinh gửi lại nguyên khung kết quả.</p>`:''}
+      ${a.n?`<div class="tablewrap"><table>
+        <thead><tr><th class="num">#</th><th>Họ tên</th><th>Lớp</th><th class="num">Điểm</th><th class="num">Câu đúng</th><th class="num">Thời gian</th><th class="num">Lần nộp</th><th>Từ làm sai</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <p class="hint">Nếu một học sinh nộp nhiều lần, bảng hiển thị lần có điểm cao nhất.</p>
+      <div class="send"><h2>Từ cả lớp hay làm sai</h2>${hard?`<ul class="hard">${hard}</ul>`:'<p class="hint">Chưa có từ nào bị làm sai.</p>'}</div>
+      <details id="tsvbox"><summary>Bảng dạng văn bản để dán vào Excel hoặc Google Sheets</summary>
+        <div class="send" style="margin-top:10px"><textarea id="tsv" readonly rows="8" aria-label="Bảng điểm dạng văn bản">${esc(tsv())}</textarea>
+        <div class="btns"><button class="btn" data-act="copytsv">Sao chép bảng</button></div></div></details>`
+      :`<p class="hint">Chưa đọc được bài nộp nào. Hãy dán các tin nhắn có dòng "Mã nộp bài: VC2…" vào khung ở trên.</p>`}`;
+  }
+  return `<div class="shell"><section class="page">
+    <div><p class="kicker">Dành cho giáo viên</p><h1>Tổng hợp kết quả lớp</h1></div>
+    <div class="send">
+      <p class="lede">Dán tất cả tin nhắn kết quả mà học sinh gửi (từ chat Zoom, Google Meet, Zalo hoặc nơi khác) vào khung dưới. Trang sẽ tự tìm các Mã nộp bài và lập bảng điểm.</p>
+      <textarea id="paste" data-f="paste" rows="9" aria-label="Kết quả của học sinh" placeholder="Dán kết quả vào đây…">${esc(S.paste)}</textarea>
+      <div class="btns"><button class="btn primary big" data-act="aggregate">Tổng hợp</button><button class="btn big" data-act="back">Về trang chơi</button></div>
+    </div>
+    ${out}
+  </section></div>`;
+}
+function render(){
+  app.innerHTML=S.screen==='setup'?setupHTML():S.screen==='quiz'?quizHTML():S.screen==='results'?resultsHTML():teacherHTML();
+}
+
+/* events */
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');
+  if(!el)return;
+  const a=el.dataset.act,v=el.dataset.v;
+  if(a==='count'){S.count=+v;render();}
+  else if(a==='timer'){S.timer=+v;render();}
+  else if(a==='start'||a==='again'){startGame();}
+  else if(a==='setup'||a==='back'){S.screen='setup';try{location.hash='play';}catch(x){}render();}
+  else if(a==='teacher'){S.screen='teacher';try{location.hash='teacher';}catch(x){}render();window.scrollTo(0,0);}
+  else if(a==='aggregate'){aggregate();render();}
+  else if(a==='copyrep'){copyFrom('rep',el);}
+  else if(a==='copytsv'){copyFrom('tsv',el,'tsvbox');}
+  else if(a==='mute'){S.sound=!S.sound;el.textContent='Âm thanh: '+(S.sound?'bật':'tắt');el.setAttribute('aria-pressed',S.sound);}
+  else if(a==='end'){
+    if(S.endArm){finish();}
+    else{
+      S.endArm=true;el.textContent='Bấm lần nữa để nộp bài';
+      setTimeout(()=>{S.endArm=false;if(el.isConnected)el.textContent='Nộp bài';},4000);
+    }
+  }
+  else if(a==='opt'){choose(+el.dataset.k);}
+  else if(a==='next'){nextStep();}
+});
+document.addEventListener('input',e=>{
+  const t=e.target,f=t.dataset&&t.dataset.f;
+  if(f==='name')S.name=t.value;
+  else if(f==='cls')S.cls=t.value;
+  else if(f==='paste')S.paste=t.value;
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.target&&e.target.id==='pname'){e.preventDefault();startGame();return;}
+  if(S.screen!=='quiz'||!S.q||S.q.done)return;
+  const key=e.key.toLowerCase();
+  let k=-1;
+  if(key>='1'&&key<='4')k=+key-1;
+  else if(key>='a'&&key<='d')k=key.charCodeAt(0)-97;
+  if(k>=0&&k<S.q.opts.length){e.preventDefault();choose(k);}
+});
+window.addEventListener('hashchange',()=>{
+  if(location.hash==='#teacher'){if(S.screen!=='quiz'&&S.screen!=='teacher'){S.screen='teacher';render();}}
+  else if(S.screen==='teacher'){S.screen='setup';render();}
+});
+
+render();
+</script>
+
+</body></html>
